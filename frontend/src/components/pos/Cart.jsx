@@ -47,7 +47,7 @@ export function Cart({ onCheckout }) {
         <span className="text-sm font-bold text-text flex items-center gap-2">
           <IconShoppingCart size={20} className="text-primary" /> Keranjang
         </span>
-        <span className="pill a" id="cart-count">{summary.itemCount} item</span>
+        <span key={summary.itemCount} className="pill a animate-pop-in" id="cart-count">{summary.itemCount} item</span>
       </div>
 
       {/* Cart Items List */}

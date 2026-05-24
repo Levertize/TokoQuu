@@ -13,6 +13,35 @@ import { useToastStore } from '../../stores/useToastStore';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 /**
+ * Helper function to calculate dynamic quick cash recommendations based on total bill.
+ * @param {number} total Total bill amount
+ * @returns {Array<number>} Dynamic recommendations
+ */
+function getQuickCashSuggestions(total) {
+  const nextTen = Math.ceil(total / 10000) * 10000;
+  const nextFifty = Math.ceil(total / 50000) * 50000;
+  const nextHundred = Math.ceil(total / 100000) * 100000;
+  
+  const candidates = [
+    nextTen,
+    nextTen + 10000,
+    nextFifty,
+    nextFifty + 50000,
+    nextHundred,
+    nextHundred + 100000
+  ];
+  
+  const suggestions = new Set();
+  candidates.forEach(c => {
+    if (c > total) suggestions.add(c);
+  });
+  
+  return Array.from(suggestions)
+    .sort((a, b) => a - b)
+    .slice(0, 5);
+}
+
+/**
  * PaymentModal handles the POS checkout options (Cash, QRIS, Bank Transfer).
  * @param {Object} props
  * @param {boolean} props.isOpen
@@ -88,12 +117,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[2000] flex items-center justify-center p-4">
-      <div className="bg-surface border border-border rounded-lg w-full max-w-[550px] shadow-2xl flex flex-col max-h-[85vh] animate-[fade-in_0.2s_ease-out]">
+      <div className="bg-surface border border-border rounded-lg w-full max-w-[550px] shadow-2xl flex flex-col max-h-[85vh] animate-scale-up">
         
         {/* Modal Head */}
         <div className="p-5 border-b border-border flex justify-between items-center bg-[rgba(148,163,184,0.02)] shrink-0">
           <span className="text-base font-bold text-text">Kasir — Proses Pembayaran</span>
-          <button className="text-text-secondary hover:bg-bg hover:text-text text-xl w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all" onClick={onClose}>&times;</button>
+          <button className="text-text-secondary hover:bg-bg hover:text-text text-xl w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all cursor-pointer" onClick={onClose}>&times;</button>
         </div>
 
         {/* Modal Body */}
@@ -113,15 +142,15 @@ export function PaymentModal({ isOpen, onClose, onSuccess }) {
 
           {/* CASH OPTION */}
           {method === 'cash' && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 animate-fade-in-up">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-text-secondary">Uang Diterima (Rp)</label>
                 <input className="w-full border border-border rounded py-2.5 px-3.5 text-sm bg-surface text-text outline-none focus:border-primary" type="number" value={cash} onChange={e => setCash(e.target.value)} placeholder="Masukkan jumlah nominal tunai..." />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <button className="bg-bg border border-border py-2 px-3 text-xs font-bold rounded hover:border-primary hover:text-primary hover:bg-primary-light/10 active:scale-95 transition-all text-text" onClick={() => handleQuickCash(0)}>Uang Pas</button>
-                {[10000, 20000, 50000, 100000, 200000].map(v => (
-                  <button key={v} className="bg-bg border border-border py-2 px-3 text-xs font-bold rounded hover:border-primary hover:text-primary hover:bg-primary-light/10 active:scale-95 transition-all text-text" onClick={() => handleQuickCash(v)}>{formatCurrency(v)}</button>
+                <button className="bg-bg border border-border py-2.5 px-3 text-xs font-extrabold rounded hover:border-primary hover:text-primary hover:bg-primary-light/10 active:scale-95 transition-all text-text cursor-pointer" onClick={() => handleQuickCash(0)}>Uang Pas</button>
+                {getQuickCashSuggestions(summary.total).map(v => (
+                  <button key={v} className="bg-bg border border-border py-2.5 px-3 text-xs font-extrabold rounded hover:border-primary hover:text-primary hover:bg-primary-light/10 active:scale-95 transition-all text-text cursor-pointer" onClick={() => handleQuickCash(v)}>{formatCurrency(v)}</button>
                 ))}
               </div>
               <div className="flex justify-between bg-bg p-3.5 rounded border border-border mt-1 text-sm font-bold">

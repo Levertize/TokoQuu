@@ -91,18 +91,18 @@ export function Dashboard() {
   const growthPct = summary?.today?.revenueGrowthPct || 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 animate-fade-in-up">
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <StatCard title="Pendapatan Hari Ini" value={formatCurrency(todayRevenue)} trend={`${growthPct >= 0 ? '+' : ''}${growthPct}% vs kemarin`} trendUp={growthPct >= 0} icon={IconCash} color="primary" />
-        <StatCard title="Total Transaksi" value={summary?.today?.transactions || 0} trend="Terproses hari ini" trendUp={true} icon={IconReceipt} color="blue" />
-        <StatCard title="Katalog Produk" value={summary?.indicators?.totalProducts || 0} trend="Katalog aktif" trendUp={true} icon={IconBuildingStore} color="teal" />
-        <StatCard title="Stok Menipis" value={summary?.indicators?.lowStockCount || 0} trend="Perlu restok segera" trendUp={summary?.indicators?.lowStockCount === 0} icon={IconAlertTriangle} color="coral" />
+        <StatCard title="Pendapatan Hari Ini" value={formatCurrency(todayRevenue)} trend={`${growthPct >= 0 ? '+' : ''}${growthPct}% vs kemarin`} trendUp={growthPct >= 0} icon={IconCash} color="primary" delayClass="delay-75" />
+        <StatCard title="Total Transaksi" value={summary?.today?.transactions || 0} trend="Terproses hari ini" trendUp={true} icon={IconReceipt} color="blue" delayClass="delay-100" />
+        <StatCard title="Katalog Produk" value={summary?.indicators?.totalProducts || 0} trend="Katalog aktif" trendUp={true} icon={IconBuildingStore} color="teal" delayClass="delay-150" />
+        <StatCard title="Stok Menipis" value={summary?.indicators?.lowStockCount || 0} trend="Perlu restok segera" trendUp={summary?.indicators?.lowStockCount === 0} icon={IconAlertTriangle} color="coral" delayClass="delay-200" />
       </div>
 
       {/* Graphs and Alert Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-6 shadow-card hover:shadow-hover transition-all">
+        <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-6 shadow-card hover:shadow-hover transition-all animate-fade-in-up delay-200">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xs font-bold text-text-secondary uppercase tracking-[0.8px]">Pendapatan 7 Hari Terakhir</h2>
           </div>
@@ -118,14 +118,14 @@ export function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `${(v/1000000).toFixed(1)}jt`} />
-                <Tooltip formatter={val => [formatCurrency(val), 'Pendapatan']} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)', borderRadius: 'var(--radius)' }} />
+                <Tooltip formatter={val => [formatCurrency(val), 'Pendapatan']} />
                 <Area type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={3} fill="url(#chartGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-surface border border-border rounded-lg p-6 shadow-card">
+        <div className="bg-surface border border-border rounded-lg p-6 shadow-card animate-fade-in-up delay-300">
           <h2 className="text-xs font-bold text-text-secondary uppercase tracking-[0.8px] mb-4">Stok Perlu Perhatian</h2>
           <div className="flex flex-col gap-2.5">
             {lowStockProducts.length === 0 ? (
@@ -153,7 +153,7 @@ export function Dashboard() {
       </div>
 
       {/* Recent Transactions Table */}
-      <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-card">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-card animate-fade-in-up delay-400">
         <div className="flex justify-between items-center p-5 border-b border-border">
           <h2 className="text-sm font-bold text-text">Transaksi Terakhir</h2>
           <button onClick={() => navigate('/reports')} className="text-xs text-primary hover:text-primary-hover font-semibold flex items-center gap-1">Lihat Laporan →</button>
@@ -194,7 +194,7 @@ export function Dashboard() {
 /**
  * StatCard sub-component.
  */
-function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
+function StatCard({ title, value, trend, trendUp, icon: Icon, color, delayClass = '' }) {
   const colorMap = {
     primary: 'bg-primary-light text-primary',
     blue: 'bg-blue-light text-blue',
@@ -203,7 +203,7 @@ function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-5 shadow-card hover:translate-y-[-2px] hover:shadow-hover transition-all relative overflow-hidden">
+    <div className={`bg-surface border border-border rounded-lg p-5 shadow-card hover:translate-y-[-4px] hover:scale-[1.01] hover:shadow-hover transition-all relative overflow-hidden animate-fade-in-up ${delayClass}`}>
       <div className="flex items-center justify-between mb-3.5">
         <span className="text-xs text-text-secondary font-semibold">{title}</span>
         <div className={`w-[42px] h-[42px] rounded flex items-center justify-center ${colorMap[color] || colorMap.primary}`}>

@@ -23,7 +23,7 @@ export function POS() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-[calc(100vh-146px)] overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-[calc(100vh-146px)] overflow-hidden animate-fade-in-up">
       {/* Left panel: Catalog grid */}
       <div className="lg:col-span-2 xl:col-span-3 flex flex-col overflow-hidden">
         <ProductGrid />

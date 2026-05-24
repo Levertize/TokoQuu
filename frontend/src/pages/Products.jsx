@@ -63,7 +63,7 @@ export function Products() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 animate-fade-in-up">
       {/* Filters Row */}
       <div className="flex justify-between items-center shrink-0 flex-wrap gap-3">
         <div className="flex gap-2.5 items-center">

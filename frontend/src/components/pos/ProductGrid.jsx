@@ -76,17 +76,28 @@ export function ProductGrid() {
 
       {/* Grid List */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 overflow-y-auto pb-5 flex-1 content-start">
-        {filteredProducts.map((p) => {
+        {filteredProducts.map((p, index) => {
+          const isOutOfStock = p.stock <= 0;
           let pillColor = 'g';
-          if (p.stock <= 0) pillColor = 'r';
+          if (isOutOfStock) pillColor = 'r';
           else if (p.stock <= p.min_stock) pillColor = 'a';
 
           return (
             <div
               key={p.id}
-              onClick={() => handleAdd(p)}
-              className="bg-surface border border-border rounded-lg p-3.5 cursor-pointer flex flex-col hover:border-primary hover:translate-y-[-2px] shadow-card hover:shadow-hover transition-all"
+              onClick={() => !isOutOfStock && handleAdd(p)}
+              style={{ animationDelay: `${Math.min(index * 40, 360)}ms` }}
+              className={`bg-surface border border-border rounded-lg p-3.5 flex flex-col relative overflow-hidden transition-all duration-300 animate-fade-in-up ${
+                isOutOfStock
+                  ? 'opacity-50 cursor-not-allowed select-none'
+                  : 'cursor-pointer hover:border-primary hover:translate-y-[-4px] hover:scale-[1.02] shadow-card hover:shadow-hover'
+              }`}
             >
+              {isOutOfStock && (
+                <div className="absolute inset-0 bg-slate-950/10 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <span className="bg-coral-mid/95 text-white font-extrabold text-[10px] px-2.5 py-1.5 rounded uppercase tracking-wider shadow-[0_2px_8px_rgba(244,63,94,0.3)] animate-pulse">Habis</span>
+                </div>
+              )}
               <div className="w-11 h-11 rounded bg-bg flex items-center justify-center text-2xl mb-2.5">{p.emoji}</div>
               <div className="text-[13.5px] font-bold text-text mb-1 truncate" title={p.name}>{p.name}</div>
               <div className="text-[12.5px] text-primary font-bold mb-3">{formatCurrency(p.sell_price)}</div>
