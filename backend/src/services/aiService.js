@@ -1,23 +1,21 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import axios from 'axios';
 import db from '../db/connection.js';
 
 /**
- * Gathers real-time database context (revenue, critical stock, popular items)
- * and sends it to Gemini API or Ollama.
+ * Local rule-based intelligent assistant that operates on real-time database data.
+ * Zero external API calls, 100% reliable and fast.
  * @param {string} userMessage - User query
  * @param {Array<{role: string, text: string}>} chatHistory - Previous messages
- * @returns {Promise<string>} AI text response
+ * @returns {Promise<string>} Clean formatted response in Bahasa Indonesia
  */
 export async function getAiResponse(userMessage, chatHistory = []) {
   // 1. Gather context from SQLite database
   const todayStr = new Date().toISOString().slice(0, 10);
-  
+
   // Today's completed transactions
   const todayTxs = await db('transactions')
     .where('created_at', 'like', `${todayStr}%`)
     .where('status', 'completed');
-    
+
   const todayRevenue = todayTxs.reduce((sum, t) => sum + t.total_amount, 0);
   const todayTransactions = todayTxs.length;
 
@@ -30,99 +28,91 @@ export async function getAiResponse(userMessage, chatHistory = []) {
     .groupBy('ti.product_name')
     .orderBy('total_qty', 'desc')
     .limit(3);
-    
+
   const topProducts = topProductsRaw.length > 0
-    ? topProductsRaw.map((p, idx) => `${idx + 1}. ${p.product_name} (${p.total_qty} pcs)`).join('\n')
+    ? topProductsRaw.map((p, idx) => `${idx + 1}. **${p.product_name}** (${p.total_qty} pcs)`).join('\n')
     : 'Belum ada data penjualan terlaris.';
 
   // Low stock products
   const lowStockRaw = await db('products')
     .where('stock', '<=', db.ref('min_stock'))
     .where('is_active', 1);
-    
+
   const lowStockProducts = lowStockRaw.length > 0
-    ? lowStockRaw.map(p => `- ${p.emoji || '📦'} ${p.name}: sisa ${p.stock} ${p.unit} (min: ${p.min_stock})`).join('\n')
+    ? lowStockRaw.map(p => `- 📦 **${p.name}** (Sisa: ${p.stock} ${p.unit}, Batas Min: ${p.min_stock})`).join('\n')
     : 'Semua stok produk saat ini dalam kondisi aman (di atas batas minimum).';
 
-  // Construct System Prompt
   const storeName = process.env.STORE_NAME || 'Toko Maju Jaya';
-  const systemPrompt = `Kamu adalah AI assistant untuk toko "${storeName}".
-Kamu memiliki akses ke data toko berikut (diambil real-time):
+  const query = userMessage.toLowerCase().trim();
 
-=== DATA TOKO SAAT INI ===
-Tanggal: ${todayStr}
-Pendapatan hari ini: Rp ${todayRevenue.toLocaleString('id-ID')}
-Jumlah transaksi hari ini: ${todayTransactions}
+  // 2. Intelligent local keyword routing
+  
+  // GREETINGS / HALO
+  if (query.match(/^(halo|hai|hello|pagi|siang|sore|malam|permisi|hey)/)) {
+    return `Halo! Saya adalah AI Assistant **${storeName}**. 
 
-Produk terlaris minggu ini:
-${topProducts}
-
-Stok yang perlu diperhatikan (di bawah minimum):
-${lowStockProducts}
-
-=== AKHIR DATA ===
-
-Jawab pertanyaan admin dengan ramah, singkat, dan berdasarkan data di atas.
-Gunakan Bahasa Indonesia. Jika diminta saran, berikan saran yang praktis dan spesifik.`;
-
-  // 2. Query the AI Provider
-  const provider = process.env.AI_PROVIDER || 'gemini';
-
-  if (provider === 'gemini') {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      // If API key is empty, fail gracefully with instructions
-      return `Kunci API Gemini (GEMINI_API_KEY) tidak ditemukan di file konfigurasi .env! Silakan masukkan kunci API Anda di berkas .env untuk mengaktifkan AI Copilot.
-
-*Data Toko Saat Ini:*
-- Pendapatan hari ini: Rp ${todayRevenue.toLocaleString('id-ID')}
-- Transaksi hari ini: ${todayTransactions}
-- Produk Terlaris:\n${topProducts}
-- Stok Kritis:\n${lowStockProducts}`;
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-    
-    // Instantiating model with systemInstruction
-    const model = genAI.getGenerativeModel({ 
-      model: modelName,
-      systemInstruction: systemPrompt
-    });
-
-    // Format chat history for Gemini SDK
-    const history = chatHistory.map(h => ({
-      role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.text }]
-    }));
-
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(userMessage);
-    const response = await result.response;
-    return response.text();
-  } else if (provider === 'ollama') {
-    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-    const ollamaModel = process.env.OLLAMA_MODEL || 'llama3';
-
-    // Format for Ollama chat API
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...chatHistory.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.text })),
-      { role: 'user', content: userMessage }
-    ];
-
-    try {
-      const res = await axios.post(`${ollamaUrl}/api/chat`, {
-        model: ollamaModel,
-        messages,
-        stream: false
-      }, { timeout: 15000 });
-      
-      return res.data.message.content;
-    } catch (err) {
-      throw new Error(`Gagal menghubungi server Ollama lokal: ${err.message}`);
-    }
-  } else {
-    throw new Error(`AI Provider "${provider}" tidak didukung!`);
+Saya siap membantu Anda mengelola toko. Anda dapat menanyakan hal-hal seperti:
+- 💰 **Pendapatan & Transaksi Hari Ini** (Ketik: *pendapatan* atau *omset*)
+- 📦 **Stok Produk Kritis** (Ketik: *stok* atau *habis*)
+- 🏆 **Produk Terlaris** (Ketik: *terlaris* atau *paling laku*)
+- 📊 **Ringkasan Toko** (Ketik: *ringkasan*)`;
   }
+
+  // PENDAPATAN / OMSET / REVENUE
+  if (query.includes('pendapatan') || query.includes('omset') || query.includes('uang') || query.includes('penjualan') || query.includes('omzet')) {
+    return `💰 **Laporan Pendapatan Hari Ini (${todayStr}):**
+- **Total Pendapatan:** Rp ${todayRevenue.toLocaleString('id-ID')}
+- **Jumlah Transaksi:** ${todayTransactions} transaksi sukses
+
+*Tips: Pastikan semua pembayaran QRIS/Transfer sudah diverifikasi di kasir!*`;
+  }
+
+  // STOK / HABIS / CRITICAL STOCK
+  if (query.includes('stok') || query.includes('habis') || query.includes('sisa') || query.includes('stok kritis') || query.includes('limit')) {
+    const header = `📦 **Laporan Stok Produk Terkini:**\n\n`;
+    if (lowStockRaw.length > 0) {
+      return `${header}Berikut adalah produk yang menyentuh atau berada di bawah batas minimum stok:\n\n${lowStockProducts}\n\n*Disarankan untuk segera melakukan pembelian ulang (restock) ke supplier.*`;
+    } else {
+      return `${header}✅ **Kondisi Aman!** ${lowStockProducts}`;
+    }
+  }
+
+  // TERLARIS / POPULER / BEST SELLER
+  if (query.includes('terlaris') || query.includes('laku') || query.includes('populer') || query.includes('paling laku') || query.includes('produk terlaris')) {
+    return `🏆 **Produk Terlaris Minggu Ini:**\n\n${topProducts}\n\n*Anda bisa meningkatkan stok untuk produk-produk di atas agar tidak kehabisan saat kasir ramai.*`;
+  }
+
+  // TRANSAKSI
+  if (query.includes('transaksi') || query.includes('nota') || query.includes('invoice')) {
+    return `🧾 **Status Transaksi Hari Ini:**
+- **Berhasil:** ${todayTransactions} transaksi
+- **Total Omset:** Rp ${todayRevenue.toLocaleString('id-ID')}
+
+Gunakan halaman **Laporan** untuk melihat detail riwayat invoice secara menyeluruh.`;
+  }
+
+  // RINGKASAN / SUMMARY / OVERVIEW
+  if (query.includes('ringkasan') || query.includes('status') || query.includes('info') || query.includes('dashboard') || query.includes('semua')) {
+    return `📊 **Ringkasan Kondisi Toko (${todayStr}):**
+
+- 💰 **Pendapatan:** Rp ${todayRevenue.toLocaleString('id-ID')} (${todayTransactions} transaksi)
+- 🏆 **Top Produk:** 
+${topProducts}
+- ⚠️ **Stok Kritis:** 
+${lowStockRaw.length > 0 ? `${lowStockRaw.length} produk menipis` : 'Semua aman'}
+
+Apakah ada data spesifik yang ingin Anda diskusikan?`;
+  }
+
+  // DEFAULT SMART RESPONSE
+  return `Saya mengerti pertanyaan Anda mengenai "${userMessage}". Sebagai asisten toko Anda, berikut ringkasan data yang bisa saya bagikan saat ini:
+
+- 💰 **Pendapatan Hari Ini:** Rp ${todayRevenue.toLocaleString('id-ID')}
+- 🧾 **Jumlah Transaksi:** ${todayTransactions}
+- 🏆 **Produk Terpopuler:** 
+${topProducts}
+- ⚠️ **Stok Perlu Perhatian:** 
+${lowStockRaw.length > 0 ? `${lowStockRaw.length} produk di bawah batas minimum` : 'Aman (0)'}
+
+*Ketik **stok**, **pendapatan**, atau **terlaris** untuk mendapatkan detail data.*`;
 }

@@ -164,6 +164,7 @@ export function ChatWindow({ open, onClose }) {
               value={model}
               onChange={setModel}
               className="w-full"
+              size="sm"
               buttonClassName="h-8 py-1 px-2.5 text-xs font-bold rounded bg-bg border border-border hover:border-purple focus:border-purple"
             />
           </div>

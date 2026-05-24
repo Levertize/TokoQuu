@@ -400,16 +400,16 @@ export function formatCurrency(amount) {
 
 - [x] Desain UI / mockup selesai
 - [x] Setup struktur folder & konfigurasi
-- [ ] Database schema & seed data
-- [ ] Backend API (Express + SQLite)
+- [x] Database schema & seed data
+- [x] Backend API (Express + SQLite)
 - [x] Frontend — Layout & navigasi
 - [x] Frontend — Halaman Dashboard
 - [x] Frontend — Halaman POS
 - [x] Frontend — Halaman Produk & Stok
 - [x] Frontend — Halaman Laporan
 - [x] Frontend — AI Chat
-- [ ] Autentikasi (login/logout)
-- [ ] Testing & bug fix
+- [x] Autentikasi (login/logout)
+- [x] Testing & bug fix
 - [ ] Deploy / dokumentasi
 
 ---

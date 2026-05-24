@@ -147,7 +147,7 @@ export async function createTransaction(req, res, next) {
     }
 
     // 2. Generate invoice number
-    const invoiceNumber = await generateInvoiceNumber();
+    const invoiceNumber = await generateInvoiceNumber(trx);
     const cashierName = req.user ? req.user.full_name : 'Admin Toko';
 
     // 3. Insert transaction

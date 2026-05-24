@@ -9,9 +9,10 @@ import { IconChevronDown } from '@tabler/icons-react';
  * @param {function(string): void} props.onChange - Callback when value changes
  * @param {string} [props.className] - Extra class names for wrapper
  * @param {string} [props.buttonClassName] - Extra class names for the button trigger
+ * @param {string} [props.size] - Size of the select ('sm' | 'md')
  * @returns {React.ReactElement}
  */
-export function Select({ options, value, onChange, className = '', buttonClassName = '' }) {
+export function Select({ options, value, onChange, className = '', buttonClassName = '', size = 'md' }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -35,18 +36,23 @@ export function Select({ options, value, onChange, className = '', buttonClassNa
     };
   }, []);
 
-  const heightClass = buttonClassName.includes('h-') ? '' : 'h-11';
+  const defaultHeight = size === 'sm' ? 'h-8' : 'h-11';
+  const heightClass = buttonClassName.includes('h-') ? '' : defaultHeight;
+  const triggerPaddingClass = size === 'sm' ? 'px-2.5 text-xs' : 'px-4 text-sm';
+  const triggerIconSize = size === 'sm' ? 14 : 16;
+  const optionPaddingClass = size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2.5 text-sm';
+  const indicatorSizeClass = size === 'sm' ? 'w-1 h-1' : 'w-1.5 h-1.5';
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between border border-border rounded ${heightClass} px-4 text-sm font-semibold bg-surface text-text outline-none hover:border-border-hover focus:border-primary focus:shadow-[0_0_0_3px_rgba(217,119,6,0.1)] transition-all cursor-pointer ${buttonClassName}`}
+        className={`w-full flex items-center justify-between border border-border rounded ${heightClass} ${triggerPaddingClass} font-semibold bg-surface text-text outline-none hover:border-border-hover focus:border-primary focus:shadow-[0_0_0_3px_rgba(217,119,6,0.1)] transition-all cursor-pointer ${buttonClassName}`}
       >
         <span className="truncate">{selectedOption?.label}</span>
         <IconChevronDown
-          size={16}
+          size={triggerIconSize}
           className={`text-text-secondary transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
@@ -63,7 +69,7 @@ export function Select({ options, value, onChange, className = '', buttonClassNa
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full text-left transition-colors duration-150 flex items-center justify-between ${optionPaddingClass} ${
                   isSelected
                     ? 'bg-primary-light text-primary font-bold dark:bg-primary-pale dark:text-primary'
                     : 'text-text hover:bg-bg'
@@ -71,7 +77,7 @@ export function Select({ options, value, onChange, className = '', buttonClassNa
               >
                 <span className="truncate">{opt.label}</span>
                 {isSelected && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 ml-2" />
+                  <span className={`rounded-full bg-primary shrink-0 ml-2 ${indicatorSizeClass}`} />
                 )}
               </button>
             );
