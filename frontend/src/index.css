@@ -1,0 +1,281 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme Variables */
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --border-focus: #f59e0b;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    
+    --primary: #d97706;
+    --primary-hover: #b45309;
+    --primary-light: #fef3c7;
+    --primary-pale: #fde68a;
+    
+    --teal: #0f766e;
+    --teal-light: #ccfbf1;
+    --teal-mid: #14b8a6;
+    --teal-pale: #99f6e4;
+    
+    --coral: #be123c;
+    --coral-light: #ffe4e6;
+    --coral-mid: #f43f5e;
+    
+    --purple: #6d28d9;
+    --purple-light: #f3e8ff;
+    --purple-pale: #e9d5ff;
+    
+    --blue: #1d4ed8;
+    --blue-light: #dbeafe;
+    --blue-pale: #bfdbfe;
+    
+    --green: #15803d;
+    --green-light: #dcfce7;
+    --green-pale: #bbf7d0;
+    
+    --danger: #b91c1c;
+    --danger-light: #fee2e2;
+    
+    --radius-sm: 6px;
+    --radius: 12px;
+    --radius-lg: 18px;
+    
+    --card-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 8px -1px rgba(148, 163, 184, 0.04);
+    --hover-shadow: 0 20px 25px -5px rgba(148, 163, 184, 0.15), 0 8px 10px -6px rgba(148, 163, 184, 0.1);
+    --toast-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  }
+
+  body.dark-theme {
+    /* Dark Theme Variables */
+    --bg: #0b0f19;
+    --surface: #151f32;
+    --border: #1e293b;
+    --border-hover: #334155;
+    --border-focus: #fbbf24;
+    --text: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --primary: #fbbf24;
+    --primary-hover: #f59e0b;
+    --primary-light: #2d2412;
+    --primary-pale: #451a03;
+    
+    --teal: #2dd4bf;
+    --teal-light: #115e59;
+    --teal-mid: #14b8a6;
+    --teal-pale: #134e4a;
+    
+    --coral: #fb7185;
+    --coral-light: #4c0519;
+    --coral-mid: #f43f5e;
+    
+    --purple: #c084fc;
+    --purple-light: #3b0764;
+    --purple-pale: #2e1065;
+    
+    --blue: #60a5fa;
+    --blue-light: #1e3a8a;
+    --blue-pale: #172554;
+    
+    --green: #4ade80;
+    --green-light: #064e3b;
+    --green-pale: #022c22;
+    
+    --danger: #f87171;
+    --danger-light: #450a0a;
+    
+    --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --hover-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.6);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.15s ease;
+  }
+}
+
+/* Custom animations & scrollbar utilities from mockup */
+.critical-pulse {
+  animation: border-pulse-red 2s infinite;
+}
+
+@keyframes border-pulse-red {
+  0% { border-color: var(--border); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { border-color: var(--coral-mid); box-shadow: 0 0 8px rgba(239, 68, 68, 0.15); }
+  100% { border-color: var(--border); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.spin {
+  animation: anim-spin 1s linear infinite;
+}
+@keyframes anim-spin {
+  to { transform: rotate(360deg); }
+}
+
+.receipt-view {
+  background: #fdfdfb;
+  border: 1px solid #e2dfd5;
+  font-family: 'Courier New', Courier, monospace;
+}
+.receipt-view * {
+  font-family: 'Courier New', Courier, monospace !important;
+  color: #222 !important;
+}
+
+/* Slide in cart item */
+@keyframes slide-in-cart {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.cart-item-anim {
+  animation: slide-in-cart 0.2s ease-out;
+}
+
+/* CUSTOM TABLE STYLES FROM MOCKUP */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.tbl th {
+  padding: 12px 24px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tbl td {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.tbl tr:last-child td {
+  border-bottom: none;
+}
+
+.tbl tbody tr:hover td {
+  background: rgba(148, 163, 184, 0.03);
+}
+
+/* CUSTOM PILLS STYLES FROM MOCKUP */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pill.g {
+  background: var(--green-light);
+  color: var(--green);
+}
+.pill.g::before { background: var(--green); }
+
+.pill.a {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.pill.a::before { background: var(--primary); }
+
+.pill.r {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+.pill.r::before {
+  background: var(--danger);
+  animation: pulse-red-dot 1s infinite alternate;
+}
+
+.pill.b {
+  background: var(--blue-light);
+  color: var(--blue);
+}
+.pill.b::before { background: var(--blue); }
+
+.pill.p {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+.pill.p::before { background: var(--purple); }
+
+@keyframes pulse-red-dot {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Custom Dropdown Animation */
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-dropdown {
+  animation: dropdown-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Seamless Theme Transition Effect */
+.theme-transitioning,
+.theme-transitioning * {
+  transition: background-color 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 250ms cubic-bezier(0.4, 0, 0.2, 1),
+              fill 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 350ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
