@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { IconPrinter, IconLoader, IconDownload } from '@tabler/icons-react';
 import { useToastStore } from '../../stores/useToastStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+
 
 /**
  * ReceiptModal component for showing and printing the receipt of a successful purchase.
@@ -15,10 +17,25 @@ import { formatDate } from '../../utils/formatDate';
 export function ReceiptModal({ isOpen, transaction, onClose }) {
   const { showToast } = useToastStore();
   const [isPrinting, setIsPrinting] = useState(false);
+  const { storeName, storeAddress, receiptNotes } = useSettingsStore();
 
   if (!isOpen || !transaction) return null;
 
   const formattedDate = formatDate(transaction.created_at, 'dd/MM/yyyy HH:mm:ss');
+
+  const subtotalVal = transaction.total_amount - transaction.tax + transaction.discount;
+  const computedTaxPercent = subtotalVal > 0 ? Math.round((transaction.tax / subtotalVal) * 100) : 11;
+
+  const centerText = (str, width = 42) => {
+    const lines = str.split('\n');
+    return lines.map(l => {
+      const trimmed = l.trim();
+      if (trimmed.length >= width) return trimmed.substring(0, width);
+      const leftPad = Math.floor((width - trimmed.length) / 2);
+      return ' '.repeat(leftPad) + trimmed;
+    }).join('\n');
+  };
+
 
   /**
    * Simulates the printer connection delay.
@@ -38,8 +55,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
   const handleDownloadTxt = () => {
     const line = '------------------------------------------\n';
     let txt = '';
-    txt += '             TOKO MAJU JAYA\n';
-    txt += '       Jl. Kemang Raya No. 42, Jakarta\n';
+    txt += centerText(storeName) + '\n';
+    txt += centerText(storeAddress) + '\n';
     txt += line;
     txt += `No Invoice: ${transaction.invoice_number}\n`;
     txt += `Tanggal:    ${formattedDate}\n`;
@@ -54,9 +71,10 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
     });
     txt += line;
     
-    const subtotalVal = transaction.total_amount - transaction.tax + transaction.discount;
     txt += `Subtotal:   ${formatCurrency(subtotalVal)}\n`;
-    txt += `PPN (11%):  ${formatCurrency(transaction.tax)}\n`;
+    const taxLabel = `PPN (${computedTaxPercent}%):`;
+    const taxSpaces = 12 - taxLabel.length;
+    txt += `${taxLabel}${' '.repeat(taxSpaces > 0 ? taxSpaces : 1)}${formatCurrency(transaction.tax)}\n`;
     txt += `Diskon:     -${formatCurrency(transaction.discount)}\n`;
     txt += line;
     txt += `TOTAL:      ${formatCurrency(transaction.total_amount)}\n`;
@@ -68,8 +86,7 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
       txt += `Metode:     ${transaction.payment_method.toUpperCase()}\n`;
     }
     txt += line;
-    txt += '       Terima Kasih Atas Kunjungan Anda\n';
-    txt += '    Barang yang dibeli tidak dapat ditukar\n';
+    txt += centerText(receiptNotes) + '\n';
     
     const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -116,8 +133,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
         </head>
         <body>
           <div class="text-center font-bold mb-3">
-            <div class="text-sm">TOKO MAJU JAYA</div>
-            <div class="text-xs" style="font-weight: normal;">Jl. Kemang Raya No. 42, Jakarta</div>
+            <div class="text-sm">${storeName}</div>
+            <div class="text-xs" style="font-weight: normal;">${storeAddress}</div>
           </div>
           <div class="my-2"></div>
           <div class="flex justify-between"><span>No Invoice:</span><span>${transaction.invoice_number}</span></div>
@@ -132,8 +149,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
             </div>
           `).join('')}
           <div class="my-2"></div>
-          <div class="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(transaction.total_amount - transaction.tax + transaction.discount)}</span></div>
-          <div class="flex justify-between"><span>PPN (11%):</span><span>${formatCurrency(transaction.tax)}</span></div>
+          <div class="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(subtotalVal)}</span></div>
+          <div class="flex justify-between"><span>PPN (${computedTaxPercent}%):</span><span>${formatCurrency(transaction.tax)}</span></div>
           <div class="flex justify-between"><span>Diskon:</span><span>-${formatCurrency(transaction.discount)}</span></div>
           <div class="my-2"></div>
           <div class="flex justify-between font-bold">
@@ -156,9 +173,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
             </div>
           `}
           <div class="my-2"></div>
-          <div class="text-center text-xs mt-3">
-            Terima Kasih Atas Kunjungan Anda<br />
-            Barang yang sudah dibeli tidak dapat ditukar
+          <div class="text-center text-xs mt-3" style="white-space: pre-line;">
+            ${receiptNotes}
           </div>
           <script>
             window.onload = function() {
@@ -188,8 +204,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
           {/* Mock Receipt Container */}
           <div id="receipt-print-area" className="receipt-view border border-slate-300 p-5 rounded-sm text-[12.5px] leading-relaxed select-none max-h-[350px] overflow-y-auto">
             <div className="text-center font-bold mb-3.5">
-              <h3 className="text-base tracking-wide">TOKO MAJU JAYA</h3>
-              <div className="text-[10px] font-normal text-slate-500 mt-0.5">Jl. Kemang Raya No. 42, Jakarta</div>
+              <h3 className="text-base tracking-wide">{storeName}</h3>
+              <div className="text-[10px] font-normal text-slate-500 mt-0.5">{storeAddress}</div>
             </div>
             
             <div className="border-t border-dashed border-slate-400 my-2" />
@@ -215,8 +231,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
             
             {/* Totals */}
             <div className="flex flex-col gap-1 font-mono">
-              <div className="flex justify-between"><span>Subtotal:</span><span>{formatCurrency(transaction.total_amount - transaction.tax + transaction.discount)}</span></div>
-              <div className="flex justify-between"><span>PPN (11%):</span><span>{formatCurrency(transaction.tax)}</span></div>
+              <div className="flex justify-between"><span>Subtotal:</span><span>{formatCurrency(subtotalVal)}</span></div>
+              <div className="flex justify-between"><span>PPN ({computedTaxPercent}%):</span><span>{formatCurrency(transaction.tax)}</span></div>
               <div className="flex justify-between"><span>Diskon:</span><span>-{formatCurrency(transaction.discount)}</span></div>
             </div>
 
@@ -247,9 +263,8 @@ export function ReceiptModal({ isOpen, transaction, onClose }) {
 
             <div className="border-t border-dashed border-slate-400 my-2" />
             
-            <div className="text-center text-[10px] text-slate-500 mt-3 font-mono leading-normal">
-              Terima Kasih Atas Kunjungan Anda<br />
-              Barang yang sudah dibeli tidak dapat ditukar
+            <div className="text-center text-[10px] text-slate-500 mt-3 font-mono leading-normal whitespace-pre-line">
+              {receiptNotes}
             </div>
           </div>
 

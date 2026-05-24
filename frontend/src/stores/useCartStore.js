@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { useSettingsStore } from './useSettingsStore';
+
 
 /**
  * Zustand store for Point of Sale (POS) shopping cart management.
@@ -111,8 +113,10 @@ export const useCartStore = create((set, get) => ({
    * Computes the cart summary values (subtotal, tax, discount, total).
    */
   getSummary: () => {
-    const { cart, taxRate } = get();
+    const { cart } = get();
     const keys = Object.keys(cart);
+    const taxRatePercent = useSettingsStore.getState().taxRate;
+    const taxRate = taxRatePercent / 100;
     
     const subtotal = keys.reduce((sum, key) => sum + cart[key].price * cart[key].qty, 0);
     const tax = Math.round(subtotal * taxRate);

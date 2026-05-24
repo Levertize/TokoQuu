@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { IconRobot, IconBell } from '@tabler/icons-react';
 import { useToastStore } from '../../stores/useToastStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { formatDate } from '../../utils/formatDate';
+
 
 /**
  * Topbar layout component. Displays page title, date, notifications, and AI panel toggle.
@@ -15,6 +18,12 @@ export function Topbar({ aiPanelOpen, setAiPanelOpen }) {
   const location = useLocation();
   const { showToast } = useToastStore();
   const [currentDateStr, setCurrentDateStr] = useState('');
+  const storeName = useSettingsStore((state) => state.storeName);
+  const user = useAuthStore((state) => state.user);
+
+  const userInitials = user?.full_name 
+    ? user.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
+    : 'AD';
 
   // Update localized date string on mount
   useEffect(() => {
@@ -60,7 +69,7 @@ export function Topbar({ aiPanelOpen, setAiPanelOpen }) {
           {getPageTitle()}
         </h1>
         <div className="text-xs text-text-secondary font-medium mt-0.5">
-          Toko Maju Jaya &nbsp;·&nbsp; {currentDateStr}
+          {storeName} &nbsp;·&nbsp; {currentDateStr}
         </div>
       </div>
       
@@ -94,8 +103,11 @@ export function Topbar({ aiPanelOpen, setAiPanelOpen }) {
         </button>
 
         {/* Cashier profile avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-light to-primary-pale flex items-center justify-center text-xs font-bold text-primary ml-1.5 border border-border">
-          AD
+        <div 
+          title={user?.full_name || 'Admin'}
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-light to-primary-pale flex items-center justify-center text-xs font-bold text-primary ml-1.5 border border-border"
+        >
+          {userInitials}
         </div>
       </div>
     </header>
