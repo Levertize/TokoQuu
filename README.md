@@ -1,12 +1,54 @@
-# TokoQuu 🛒 — Dashboard Kasir Pintar & POS Full-Stack
+# TokoQuu — Dashboard Kasir Pintar & POS Full-Stack
 
-TokoQuu adalah aplikasi Point of Sale (POS) dan manajemen inventaris toko berbasis full-stack. Aplikasi ini dirancang khusus untuk membantu pemilik usaha kecil dan menengah (UMKM) mengelola transaksi harian, mengawasi stok barang, melacak riwayat penjualan, dan menganalisis performa bisnis secara real-time dengan bantuan kecerdasan buatan (AI Assistant).
+TokoQuu adalah aplikasi Point of Sale (POS) dan manajemen inventaris toko berbasis full-stack. Aplikasi ini dirancang untuk membantu pemilik usaha kecil dan menengah (UMKM) mengelola transaksi harian, mengawasi stok barang secara real-time, melacak riwayat penjualan, dan menganalisis performa bisnis dengan dukungan asisten AI pintar.
+
+---
+
+## 🏛️ Arsitektur Sistem
+
+Aplikasi TokoQuu dibangun menggunakan arsitektur client-server modern yang memisahkan area presentasi (Frontend), logika bisnis (Backend), dan penyimpanan data (Database/External Service).
+
+```mermaid
+graph TD
+    subgraph Frontend ["Antarmuka Klien (React 18 + Vite)"]
+        UI["Halaman & Komponen React<br>(Dashboard, POS, Produk, Laporan, AI Chat)"]
+        Zustand["Zustand Stores<br>(useCartStore, useSettingsStore, dll)"]
+        Axios["Axios Services<br>(Panggilan REST API)"]
+        
+        UI --> Zustand
+        UI --> Axios
+        Zustand -.->|State Cache & Persistensi| UI
+        Axios -->|Penyelarasan Data| UI
+    end
+
+    subgraph Backend ["Server API (Express.js)"]
+        Middleware["Express Middleware<br>(Autentikasi JWT, Validasi Zod)"]
+        Controllers["Controllers & Logika Bisnis<br>(Auth, Product, POS, Report, AI)"]
+        Knex["Knex.js Query Builder<br>& Better-SQLite3"]
+        AIService["AI Integration Service<br>(Gemini SDK / Ollama Client)"]
+
+        Middleware --> Controllers
+        Controllers --> Knex
+        Controllers --> AIService
+    end
+
+    subgraph External ["Penyimpanan Data & API Eksternal"]
+        SQLite[("SQLite Database<br>(database.db)")]
+        ExternalAI{"AI API Provider<br>(Google Gemini / Ollama)"}
+        
+        Knex --> SQLite
+        AIService --> ExternalAI
+    end
+
+    Axios ==>|HTTP Requests + Bearer Token| Middleware
+    Controllers ==>|JSON Response| Axios
+```
 
 ---
 
 ## 🌟 Fitur Utama
 
-Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode Terang dan Mode Gelap (*Premium Theme Transitioning*) serta micro-animations yang memikat:
+Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode Terang dan Mode Gelap serta transisi halus untuk pengalaman pengguna yang nyaman:
 
 ### 1. Dashboard Utama & Analitik Bisnis
 * **Metrik Finansial**: Ringkasan pendapatan hari ini, jumlah transaksi, rata-rata transaksi per keranjang, serta status stok produk.
@@ -14,21 +56,21 @@ Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode T
 * **Grafik Penjualan**: Visualisasi interaktif pendapatan dan volume transaksi dalam format deret waktu mingguan maupun bulanan.
 
 ### 2. Point of Sale (POS) / Kasir Digital
-* **Katalog Responsif**: Daftar produk interaktif dengan saringan kategori (*Category Filter*) dan kolom pencarian dinamis.
+* **Katalog Responsif**: Daftar produk interaktif dengan saringan kategori dan kolom pencarian dinamis.
 * **Pajak (PPN) & Diskon Dinamis**: Perhitungan nilai pajak (PPN %) dan diskon dihitung secara otomatis berdasarkan pengaturan global toko.
-* **Multi-Metode Pembayaran**: Mendukung pembayaran tunai (*Cash*), transfer bank, dan QRIS.
+* **Multi-Metode Pembayaran**: Mendukung pembayaran tunai, transfer bank, dan QRIS.
 * **Preview & Download Struk**: Cetak ulang struk belanja thermal, unduh struk belanja dalam format teks monospaced `.txt`, atau cetak langsung ke printer fisik/PDF peramban.
 
 ### 3. Manajemen Produk & Inventaris (CRUD)
-* **Penyortiran Produk**: Mengurutkan produk berdasarkan **Nama (A-Z, Z-A)**, **Harga Termahal/Termurah**, atau **Stok Terbanyak/Tersedikit**.
-* **Paginasi Cerdas**: Membatasi tampilan produk sebanyak **8 produk per halaman** untuk performa rendering yang lebih cepat.
-* **Status Indikator Stok**: Label otomatis berkode warna untuk menandai stok produk (`Normal` (Hijau), `Rendah` (Kuning), `Habis` (Merah)).
-* **Manajemen Stok Cepat**: Penambahan stok (*restock*) secara instan dengan pencatatan log perubahan.
+* **Penyortiran Produk**: Mengurutkan produk berdasarkan Nama (A-Z, Z-A), Harga Termahal/Termurah, atau Stok Terbanyak/Tersedikit.
+* **Paginasi Cerdas**: Membatasi tampilan produk sebanyak 8 produk per halaman untuk performa rendering yang lebih cepat.
+* **Status Indikator Stok**: Label otomatis berkode warna untuk menandai stok produk (Normal (Hijau), Rendah (Kuning), Habis (Merah)).
+* **Manajemen Stok Cepat**: Penambahan stok secara instan dengan pencatatan log perubahan.
 
 ### 4. Laporan Penjualan & Riwayat Transaksi
-* **Tabel Riwayat Panjang**: Riwayat seluruh invoice penjualan yang memanjang di bagian bawah halaman laporan, terpaginasi **5 baris per halaman**.
-* **Filter Kalender & Status**: Pencarian transaksi menggunakan filter pencarian teks, pemilih kalender tanggal (*date picker*), dan status transaksi (`Lunas` / `Batal`).
-* **Grafik Batang Jam Sibuk**: Grafik batang interaktif **"Distribusi Transaksi Jam Sibuk"** yang melacak interval jam-jam transaksi tersibuk di toko.
+* **Tabel Riwayat Panjang**: Riwayat seluruh invoice penjualan yang memanjang di bagian bawah halaman laporan, terpaginasi 5 baris per halaman.
+* **Filter Kalender & Status**: Pencarian transaksi menggunakan filter pencarian teks, pemilih kalender tanggal, dan status transaksi (Lunas / Batal).
+* **Grafik Batang Jam Sibuk**: Grafik batang interaktif "Distribusi Transaksi Jam Sibuk" yang melacak interval jam-jam transaksi tersibuk di toko.
 * **Pembatalan Transaksi (Void)**: Pembatalan invoice dengan pengembalian stok barang secara otomatis ke database.
 
 ### 5. Asisten AI Pintar (Real-time AI Chat)
@@ -38,7 +80,7 @@ Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode T
 
 ### 6. Profil Pengguna & Kustomisasi Toko
 * **Kustomisasi Tanpa Koding**: Mengubah Nama Toko, Alamat Fisik, Tarif Pajak (PPN %), dan Pesan Ucapan Struk langsung melalui panel pengaturan UI.
-* **Dialog Logout Animasi**: Konfirmasi keluar sesi kasir kustom yang menawan menggunakan *frosted-glass backdrop* dan entrance animation (*pop-in*).
+* **Dialog Logout Animasi**: Konfirmasi keluar sesi kasir kustom yang menawan menggunakan frosted-glass backdrop dan entrance animation (pop-in).
 
 ---
 
@@ -50,7 +92,7 @@ Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode T
 * **Icons**: Tabler Icons (`@tabler/icons-react`)
 * **State Management**: Zustand (dengan persistence middleware untuk Settings)
 * **Routing**: React Router v6
-* **Charts**: Recharts (Responsive charts)
+* **Charts**: Recharts
 * **HTTP Client**: Axios
 
 ### Backend (Node.js & Express)
@@ -69,12 +111,12 @@ Aplikasi TokoQuu dikemas dengan antarmuka pengguna premium yang mendukung Mode T
 TokoQuu/
 ├── frontend/                    # Aplikasi React SPA (Vite)
 │   ├── src/
-│   │   ├── pages/               # Halaman Aplikasi (Dashboard, POS, Products, Reports, dll)
-│   │   ├── components/          # Komponen UI Reusable (Layout, UI, POS, Chat)
-│   │   ├── stores/              # Zustand Stores (Cart, Product, Settings, Auth)
-│   │   ├── services/            # Panggilan API Axios (Product, Transaction, AI, Auth)
-│   │   ├── utils/               # Format Rupiah & Tanggal Indonesia
-│   │   ├── App.jsx              # Routing & Konfigurasi Autentikasi
+│   │   ├── pages/               # Halaman Halaman Utama Aplikasi
+│   │   ├── components/          # Komponen UI Reusable
+│   │   ├── stores/              # Zustand Stores
+│   │   ├── services/            # API Call Services
+│   │   ├── utils/               # Formatting helper
+│   │   ├── App.jsx              # Routing & Wrapper Auth
 │   │   └── main.jsx
 │   ├── index.html
 │   ├── vite.config.js
@@ -83,19 +125,19 @@ TokoQuu/
 │
 ├── backend/                     # Express REST API Server
 │   ├── src/
-│   │   ├── routes/              # Express API Routes (Products, Transactions, Reports, AI, Auth)
-│   │   ├── controllers/         # Logika Bisnis & Query SQL
-│   │   ├── middleware/          # JWT Auth, Zod Validation, & Error Handler
-│   │   ├── db/                  # Skema Database SQLite, seed data & better-sqlite3 connection
-│   │   └── services/            # Integrasi AI Gemini / Ollama
+│   │   ├── routes/              # Express API Routes
+│   │   ├── controllers/         # SQL Query & Business Logic
+│   │   ├── middleware/          # Security & Schema Validation
+│   │   ├── db/                  # Skema SQLite & Seed Data
+│   │   └── services/            # AI Integrations
 │   ├── server.js                # Server Entry Point
 │   ├── .env.example
 │   └── package.json
 │
-├── database.db                  # Database File SQLite (Dihasilkan otomatis)
-├── .env                         # Konfigurasi Environment (Jangan di-commit!)
-├── GEMINI.md                    # File petunjuk AI Agent
-└── README.md                    # Dokumentasi ini
+├── database.db                  # Database SQLite (Dihasilkan otomatis)
+├── .env                         # Konfigurasi Environment
+├── GEMINI.md                    # Panduan Konfigurasi AI Agent
+└── README.md                    # Dokumentasi utama ini
 ```
 
 ---
@@ -104,8 +146,8 @@ TokoQuu/
 
 ### 1. Prasyarat Sistem
 Pastikan perangkat Anda sudah terinstal:
-* **Node.js** (Versi 18 ke atas)
-* **NPM** (Bawaan Node.js)
+* Node.js (Versi 18 ke atas)
+* NPM (Bawaan Node.js)
 
 ### 2. Pengaturan Environment Variables
 Salin berkas `.env.example` di root proyek menjadi `.env`:
@@ -117,8 +159,7 @@ Sesuaikan konfigurasi di dalam berkas `.env`:
 * **JWT_SECRET**: Masukkan string acak panjang untuk mengamankan token login.
 
 ### 3. Instalasi Dependensi
-
-Jalankan instalasi dependensi untuk folder **backend** dan **frontend**:
+Jalankan instalasi dependensi untuk folder backend dan frontend:
 
 **Untuk Backend:**
 ```bash
@@ -138,7 +179,6 @@ Inisialisasi database SQLite dan isi data awal (dummy data) menggunakan Knex di 
 cd ../backend
 npm run db:setup
 ```
-*Catatan: Perintah di atas akan mengeksekusi migrasi skema tabel dan memasukkan data sampel produk serta akun kasir default.*
 
 ### 5. Menjalankan Aplikasi
 Anda perlu menjalankan server backend dan server dev frontend secara bersamaan.
@@ -159,7 +199,7 @@ npm run dev
 
 ---
 
-## 🔑 Kredensial Login Bawaan
+## 🔑 Kredensial Login Default
 
 Gunakan akun kasir sampel berikut untuk masuk ke dashboard pertama kali:
 * **Username**: `admin`
