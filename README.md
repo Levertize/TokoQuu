@@ -1,5 +1,13 @@
 # TokoQuu — Dashboard Kasir Pintar & POS Full-Stack
 
+![Status](https://img.shields.io/badge/Status-Development-orange?style=flat-square)
+![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?style=flat-square&logo=tailwindcss)
+![Node.js](https://img.shields.io/badge/Node.js-Express-green?style=flat-square&logo=nodedotjs)
+![Database](https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite)
+![AI](https://img.shields.io/badge/AI-Gemini%20%7C%20Ollama-7C3AED?style=flat-square&logo=google-gemini)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
 TokoQuu adalah aplikasi Point of Sale (POS) dan manajemen inventaris toko berbasis full-stack. Aplikasi ini dirancang untuk membantu pemilik usaha kecil dan menengah (UMKM) mengelola transaksi harian, mengawasi stok barang secara real-time, melacak riwayat penjualan, dan menganalisis performa bisnis dengan dukungan asisten AI pintar.
 
 ---
