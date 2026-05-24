@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   IconCash, 
   IconReceipt, 
-  IconUsers, 
   IconAlertTriangle, 
   IconTrendingUp, 
   IconTrendingDown,
   IconPackage,
-  IconCheckbox
+  IconCheckbox,
+  IconLoader,
+  IconBuildingStore
 } from '@tabler/icons-react';
 import { 
   AreaChart, 
@@ -21,59 +22,82 @@ import {
 } from 'recharts';
 import { useProductStore } from '../stores/useProductStore';
 import { useTransactionStore } from '../stores/useTransactionStore';
+import { reportService } from '../services/reportService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatTime } from '../utils/formatDate';
 
+const dayNames = { 0: 'Min', 1: 'Sen', 2: 'Sel', 3: 'Rab', 4: 'Kam', 5: 'Jum', 6: 'Sab' };
+
 /**
- * Dashboard page component. Shows shop performance overview.
+ * Dashboard page component. Shows shop performance overview and recent cashier activity.
  * @returns {React.ReactElement}
  */
 export function Dashboard() {
   const navigate = useNavigate();
   const products = useProductStore((state) => state.products);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
   const transactions = useTransactionStore((state) => state.transactions);
+  const fetchTransactions = useTransactionStore((state) => state.fetchTransactions);
 
-  // Compute live statistics
-  const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const todayTxs = transactions.filter(t => t.created_at.startsWith(today) && t.status === 'completed');
-    const todayRevenue = todayTxs.reduce((sum, t) => sum + t.total_amount, 0);
-    const lowStockCount = products.filter(p => p.stock <= p.min_stock).length;
-    
-    return {
-      revenue: todayRevenue + 2317500, // mockup baseline + today's checkouts
-      txCount: todayTxs.length + 43, // mockup baseline + today's checkouts
-      customers: 39,
-      lowStock: lowStockCount
+  const [summary, setSummary] = useState(null);
+  const [dailyData, setDailyData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([fetchProducts(), fetchTransactions()]);
+        const [sumRes, dailyRes] = await Promise.all([
+          reportService.getSummary(),
+          reportService.getDailyReport({ days: 7 })
+        ]);
+        if (active) {
+          if (sumRes.success) setSummary(sumRes.data);
+          if (dailyRes.success) setDailyData(dailyRes.data);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      } finally {
+        if (active) setLoading(false);
+      }
     };
-  }, [products, transactions]);
+    loadDashboardData();
+    return () => { active = false; };
+  }, [fetchProducts, fetchTransactions]);
 
-  // Dynamic Chart Data based on live transactions
   const chartData = useMemo(() => {
-    const baseline = [1800000, 2100000, 1500000, 2400000, 2900000, 3200000];
-    return [
-      { name: 'Sen', revenue: baseline[0] },
-      { name: 'Sel', revenue: baseline[1] },
-      { name: 'Rab', revenue: baseline[2] },
-      { name: 'Kam', revenue: baseline[3] },
-      { name: 'Jum', revenue: baseline[4] },
-      { name: 'Sab', revenue: baseline[5] },
-      { name: 'Min', revenue: stats.revenue },
-    ];
-  }, [stats.revenue]);
+    return dailyData.map(d => {
+      const dateObj = new Date(d.date);
+      const dayName = dayNames[dateObj.getDay()] || d.date;
+      return { name: dayName, revenue: d.revenue };
+    });
+  }, [dailyData]);
 
   const lowStockProducts = useMemo(() => {
     return products.filter(p => p.stock <= p.min_stock).slice(0, 4);
   }, [products]);
 
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <IconLoader size={32} className="spin text-primary" />
+      </div>
+    );
+  }
+
+  const todayRevenue = summary?.today?.revenue || 0;
+  const growthPct = summary?.today?.revenueGrowthPct || 0;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <StatCard title="Pendapatan Hari Ini" value={formatCurrency(stats.revenue)} trend="+12% vs kemarin" trendUp={true} icon={IconCash} color="primary" />
-        <StatCard title="Total Transaksi" value={stats.txCount} trend="+8 hari ini" trendUp={true} icon={IconReceipt} color="blue" />
-        <StatCard title="Pelanggan Baru" value={stats.customers} trend="+5 baru" trendUp={true} icon={IconUsers} color="teal" />
-        <StatCard title="Stok Menipis" value={stats.lowStock} trend="Perlu restock" trendUp={false} icon={IconAlertTriangle} color="coral" />
+        <StatCard title="Pendapatan Hari Ini" value={formatCurrency(todayRevenue)} trend={`${growthPct >= 0 ? '+' : ''}${growthPct}% vs kemarin`} trendUp={growthPct >= 0} icon={IconCash} color="primary" />
+        <StatCard title="Total Transaksi" value={summary?.today?.transactions || 0} trend="Terproses hari ini" trendUp={true} icon={IconReceipt} color="blue" />
+        <StatCard title="Katalog Produk" value={summary?.indicators?.totalProducts || 0} trend="Katalog aktif" trendUp={true} icon={IconBuildingStore} color="teal" />
+        <StatCard title="Stok Menipis" value={summary?.indicators?.lowStockCount || 0} trend="Perlu restok segera" trendUp={summary?.indicators?.lowStockCount === 0} icon={IconAlertTriangle} color="coral" />
       </div>
 
       {/* Graphs and Alert Columns */}
@@ -111,13 +135,13 @@ export function Dashboard() {
               </div>
             ) : (
               lowStockProducts.map(p => {
-                const isCritical = p.stock <= 3;
+                const isCritical = p.stock <= p.min_stock / 2;
                 return (
                   <div key={p.id} className={`flex items-center gap-3 p-3 rounded border border-border bg-bg ${isCritical ? 'critical-pulse' : ''}`}>
-                    <div className="w-9 h-9 bg-primary-light rounded flex items-center justify-center text-primary shrink-0"><IconPackage size={18} /></div>
+                    <div className="w-9 h-9 bg-primary-light rounded flex items-center justify-center text-primary shrink-0 text-lg">{p.emoji || '📦'}</div>
                     <div className="flex-1">
                       <div className="text-xs font-bold text-text">{p.name}</div>
-                      <div className="text-[11px] text-text-secondary">Sisa {p.stock} pcs (min: {p.min_stock})</div>
+                      <div className="text-[11px] text-text-secondary">Sisa {p.stock} {p.unit} (min: {p.min_stock})</div>
                     </div>
                     <span className={`pill ${isCritical ? 'r' : 'a'}`}>{isCritical ? 'Kritis' : 'Rendah'}</span>
                   </div>
@@ -154,8 +178,8 @@ export function Dashboard() {
                 <td className="font-bold">{formatCurrency(tx.total_amount)}</td>
                 <td>{formatTime(tx.created_at)}</td>
                 <td>
-                  <span className={`pill ${tx.status === 'completed' ? 'g' : 'a'}`}>
-                    {tx.status === 'completed' ? 'Lunas' : 'Pending'}
+                  <span className={`pill ${tx.status === 'completed' ? 'g' : 'r'}`}>
+                    {tx.status === 'completed' ? 'Lunas' : 'Batal'}
                   </span>
                 </td>
               </tr>
@@ -186,7 +210,7 @@ function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
           <Icon size={20} />
         </div>
       </div>
-      <div className="text-[28px] font-extrabold tracking-tight mb-1.5 text-text">{value}</div>
+      <div className="text-[28px] font-extrabold tracking-tight mb-1.5 text-text leading-tight">{value}</div>
       <div className={`text-xs flex items-center gap-1 font-semibold ${trendUp ? 'up' : 'down'}`}>
         {trendUp ? <IconTrendingUp size={14} /> : <IconTrendingDown size={14} />} {trend}
       </div>

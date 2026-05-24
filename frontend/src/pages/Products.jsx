@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { IconSearch, IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
 import { useProductStore } from '../stores/useProductStore';
 import { useToastStore } from '../stores/useToastStore';
@@ -21,8 +21,13 @@ const CATEGORY_OPTIONS = [
  */
 export function Products() {
   const products = useProductStore((state) => state.products);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
   const deleteProduct = useProductStore((state) => state.deleteProduct);
   const { showToast } = useToastStore();
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');

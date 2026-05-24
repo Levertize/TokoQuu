@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { IconSearch } from '@tabler/icons-react';
 import { useProductStore } from '../../stores/useProductStore';
 import { useCartStore } from '../../stores/useCartStore';
@@ -20,8 +20,13 @@ const CATEGORY_OPTIONS = [
  */
 export function ProductGrid() {
   const products = useProductStore((state) => state.products);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
   const addToCart = useCartStore((state) => state.addToCart);
   const { showToast } = useToastStore();
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');

@@ -10,6 +10,7 @@ import {
   IconMoon 
 } from '@tabler/icons-react';
 import { useToastStore } from '../../stores/useToastStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 /**
  * Sidebar layout component. Handles theme toggling and page routing.
@@ -17,6 +18,8 @@ import { useToastStore } from '../../stores/useToastStore';
  */
 export function Sidebar() {
   const { showToast } = useToastStore();
+  const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   // Sync theme to body element
@@ -105,10 +108,16 @@ export function Sidebar() {
 
         {/* Profile Avatar */}
         <div 
-          onClick={() => showToast('Admin Logged In', 'success')}
+          onClick={async () => {
+            if (window.confirm('Apakah Anda yakin ingin keluar?')) {
+              await logout();
+              showToast('Logout berhasil!', 'success');
+            }
+          }}
+          title={`Keluar (${user?.full_name || 'Admin'})`}
           className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-light to-primary-pale flex items-center justify-center text-xs font-bold text-primary cursor-pointer border-2 border-border"
         >
-          AD
+          {user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AD'}
         </div>
       </div>
     </nav>

@@ -8,17 +8,12 @@ import {
   IconSparkles, 
   IconBrain
 } from '@tabler/icons-react';
-import { useProductStore } from '../../stores/useProductStore';
-import { useTransactionStore } from '../../stores/useTransactionStore';
 import { MessageBubble } from './MessageBubble';
 import { QuickPrompts } from './QuickPrompts';
 import { Select } from '../ui/Select';
+import { aiService } from '../../services/aiService';
 
-const MODEL_OPTIONS = [
-  '✨ Gemini 2.0 Flash',
-  '🧠 Gemini 1.5 Pro',
-  '🏠 Ollama (Lokal)'
-];
+const MODEL_OPTIONS = ['✨ Gemini 2.0 Flash', '🧠 Gemini 1.5 Pro', '🏠 Ollama (Lokal)'];
 
 const pageLabelMap = {
   '/': 'dashboard', '/dashboard': 'dashboard',
@@ -35,7 +30,7 @@ const pageNameMap = {
 };
 
 /**
- * AI Chat panel component. Manages conversational list and simulated responses.
+ * AI Chat panel component. Manages conversational list and hooks up backend AI service calls.
  * @param {Object} props
  * @param {boolean} props.open
  * @param {Function} props.onClose
@@ -62,55 +57,10 @@ export function ChatWindow({ open, onClose }) {
   }, [messages]);
 
   /**
-   * Evaluates mockup query responses based on app state.
+   * Dispatches user message and triggers real AI response.
+   * @param {string} [text]
    */
-  const evaluateResponse = (q) => {
-    const lowerQ = q.toLowerCase();
-    const products = useProductStore.getState().products;
-    const transactions = useTransactionStore.getState().transactions;
-
-    if (lowerQ.includes('laris') || lowerQ.includes('top')) {
-      return `Berikut adalah <b>3 Produk Terlaris</b> minggu ini:<br>
-      💧 Aqua 600ml (312 pcs)<br>
-      🍵 Teh Botol (287 pcs)<br>
-      🍜 Mie Goreng (251 pcs)<br>
-      Mie Goreng memberikan profit margin terbesar (75%).`;
-    }
-    if (lowerQ.includes('stok') || lowerQ.includes('tipis') || lowerQ.includes('restock') || lowerQ.includes('kritis')) {
-      const low = products.filter(p => p.stock <= p.min_stock);
-      if (!low.length) return 'Semua stok produk saat ini dalam kondisi aman (di atas batas minimum).';
-      return `Membaca data stok, ada <b>${low.length} produk</b> kritis:<br>` + 
-        low.map(p => `• <b>${p.emoji} ${p.name}</b>: sisa ${p.stock} pcs (min: ${p.min_stock})`).join('<br>') +
-        '<br>Rekomendasi: Segera restock produk di atas.';
-    }
-    if (lowerQ.includes('pendapatan') || lowerQ.includes('omset') || lowerQ.includes('toko hari ini')) {
-      const today = new Date().toISOString().slice(0, 10);
-      const todayTxs = transactions.filter(t => t.created_at.startsWith(today));
-      const revenue = todayTxs.reduce((sum, t) => sum + t.total_amount, 0);
-      return `Pendapatan hari ini: <b>Rp ${revenue.toLocaleString('id-ID')}</b> dari <b>${todayTxs.length} transaksi</b>.<br>Rata-rata belanja: Rp ${(todayTxs.length ? Math.round(revenue / todayTxs.length) : 0).toLocaleString('id-ID')}.`;
-    }
-    if (lowerQ.includes('margin') || lowerQ.includes('untung')) {
-      const sorted = [...products].sort((a,b) => ((b.sell_price-b.buy_price)/b.sell_price) - ((a.sell_price-a.buy_price)/a.sell_price));
-      if (!sorted.length) return 'Katalog kosong.';
-      const top = sorted[0]; const btm = sorted[sorted.length-1];
-      return `Margin Tertinggi: <b>${top.name} (${Math.round((top.sell_price-top.buy_price)/top.sell_price*100)}%)</b><br>Margin Terendah: <b>${btm.name} (${Math.round((btm.sell_price-btm.buy_price)/btm.sell_price*100)}%)</b>`;
-    }
-    if (lowerQ.includes('promo') || lowerQ.includes('bundling') || lowerQ.includes('upselling')) {
-      return `Taktik promosi kasir:<br>1. **Paket Sarapan**: Roti Tawar 🍞 + Susu UHT 🥛 seharga Rp 17.000.<br>2. **Paket Segar**: Aqua 600ml 💧 + Teh Botol 🍵 seharga Rp 8.000.`;
-    }
-    if (lowerQ.includes('minggu') || lowerQ.includes('banding')) {
-      return `Penjualan minggu ini Rp 15,3 Jt (+10.8% dibanding minggu lalu). Minuman berkontribusi tertinggi.`;
-    }
-    if (lowerQ.includes('ramai') || lowerQ.includes('jam')) {
-      return `Jam sibuk utama: 11.00-13.00 (Makan siang) & 18.30-20.00 (Pulang kerja). Siapkan kasir cadangan di jam ini.`;
-    }
-    return `Pertanyaan Anda tentang "<em>${q}</em>" diterima. Integrasi Gemini 2.0 akan memproses SQLite di versi backend.`;
-  };
-
-  /**
-   * Dispatches user message and triggers mock AI response.
-   */
-  const handleSend = (text = inputVal) => {
+  const handleSend = async (text = inputVal) => {
     const q = text.trim();
     if (!q) return;
 
@@ -121,18 +71,39 @@ export function ChatWindow({ open, onClose }) {
     setMessages(prev => [...prev, userMsg, typingMsg]);
     setInputVal('');
 
-    setTimeout(() => {
+    try {
+      const apiHistory = messages
+        .filter(m => !m.isTyping && m.id !== 1)
+        .map(m => ({
+          role: m.sender === 'user' ? 'user' : 'model',
+          text: m.text
+        }));
+
+      const res = await aiService.chat(q, apiHistory);
+
       setMessages(prev => {
         const filtered = prev.filter(m => m.id !== typingId);
         const aiAnswer = {
           id: Date.now() + 1,
           sender: 'ai',
-          text: evaluateResponse(q),
+          text: res.success ? res.response : 'Maaf, terjadi kesalahan saat memproses jawaban.',
           timestamp: new Date().toISOString()
         };
         return [...filtered, aiAnswer];
       });
-    }, 1000);
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.message;
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.id !== typingId);
+        const aiAnswer = {
+          id: Date.now() + 1,
+          sender: 'ai',
+          text: `Gagal memproses permintaan AI: <br><span className="text-danger font-semibold">${errMsg}</span>`,
+          timestamp: new Date().toISOString()
+        };
+        return [...filtered, aiAnswer];
+      });
+    }
   };
 
   return (
@@ -156,15 +127,11 @@ export function ChatWindow({ open, onClose }) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-mid opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-mid"></span>
                 </span>
-                Gemini 2.0
+                Active
               </div>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="text-text-secondary hover:bg-bg hover:text-text p-1.5 rounded-full transition-colors" 
-            title="Sembunyikan AI Assistant"
-          >
+          <button onClick={onClose} className="text-text-secondary hover:bg-bg hover:text-text p-1.5 rounded-full transition-colors" title="Sembunyikan AI Assistant">
             <IconX size={16} />
           </button>
         </div>
@@ -212,10 +179,7 @@ export function ChatWindow({ open, onClose }) {
               placeholder="Tanya AI seputar data toko..."
               onKeyDown={e => e.key === 'Enter' && handleSend()}
             />
-            <button 
-              onClick={() => handleSend()} 
-              className="w-8 h-8 bg-gradient-to-br from-purple to-indigo-600 hover:from-purple-hover hover:to-indigo-700 text-white rounded flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(109,40,217,0.2)] hover:translate-y-[-1px] transition-transform"
-            >
+            <button onClick={() => handleSend()} className="w-8 h-8 bg-gradient-to-br from-purple to-indigo-600 hover:from-purple-hover hover:to-indigo-700 text-white rounded flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(109,40,217,0.2)] hover:translate-y-[-1px] transition-transform">
               <IconSend size={14} />
             </button>
           </div>
