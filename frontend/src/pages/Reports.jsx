@@ -215,7 +215,7 @@ export function Reports() {
             <h2 className="text-xs font-bold text-text-secondary uppercase tracking-[0.8px] mb-3.5">Distribusi Transaksi Jam Sibuk</h2>
             <div className="flex items-end gap-1.5 h-16">
               {hourly.map((hr, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1">
                   <div 
                     className={`w-full rounded-t-sm transition-all duration-500 ${
                       hr.active 
@@ -224,7 +224,7 @@ export function Reports() {
                     }`} 
                     style={{ height: hr.pct }} 
                   />
-                  <span className="text-[9px] text-text-muted font-bold">{hr.hour}</span>
+                  <span className="text-[9px] text-text-muted font-bold shrink-0">{hr.hour}</span>
                 </div>
               ))}
             </div>
