@@ -241,28 +241,49 @@ export function Reports() {
           </div>
           
           {/* Filters */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             {/* Search Input */}
-            <div className="relative flex-1 sm:w-60">
+            <div className="relative flex-1 min-w-[140px] sm:w-48">
               <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 type="text"
                 placeholder="Cari Invoice / Pelanggan..."
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 className="w-full pl-8 pr-3 py-1.5 border border-border bg-bg text-xs font-semibold rounded text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all"
               />
             </div>
+
+            {/* Date Picker Input */}
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }}
+              className="px-2 py-1.5 border border-border bg-bg text-xs font-semibold rounded text-text outline-none focus:border-primary cursor-pointer text-text-secondary"
+              title="Filter Tanggal"
+            />
             
             {/* Status Filter Dropdown */}
             <select
               value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 border border-border bg-bg text-xs font-semibold rounded text-text outline-none focus:border-primary cursor-pointer"
+              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-1.5 border border-border bg-bg text-xs font-semibold rounded text-text outline-none focus:border-primary cursor-pointer text-text-secondary"
             >
               <option value="all">Semua Status</option>
               <option value="completed">Lunas</option>
               <option value="cancelled">Batal</option>
+            </select>
+
+            {/* Sort Filter Dropdown */}
+            <select
+              value={sortBy}
+              onChange={e => { setSortBy(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-1.5 border border-border bg-bg text-xs font-semibold rounded text-text outline-none focus:border-primary cursor-pointer text-text-secondary"
+            >
+              <option value="date-desc">Terbaru</option>
+              <option value="date-asc">Terlama</option>
+              <option value="total-desc">Total Terbesar</option>
+              <option value="total-asc">Total Terkecil</option>
             </select>
           </div>
         </div>
@@ -282,14 +303,14 @@ export function Reports() {
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.length === 0 ? (
+              {processedTransactions.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="text-center py-10 text-text-secondary font-semibold">
                     Tidak ada data transaksi ditemukan
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((tx) => (
+                paginatedTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-bg/40 transition-colors">
                     <td className="font-mono font-bold text-text-secondary">{tx.invoice_number}</td>
                     <td><b>{tx.customer_name}</b></td>
@@ -331,6 +352,34 @@ export function Reports() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {processedTransactions.length > 0 && (
+          <div className="flex justify-between items-center p-4 border-t border-border bg-[rgba(148,163,184,0.01)] text-xs shrink-0 flex-wrap gap-2.5">
+            <span className="text-text-secondary font-semibold">
+              Menampilkan {Math.min(processedTransactions.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(processedTransactions.length, currentPage * itemsPerPage)} dari {processedTransactions.length} transaksi
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className="px-3 py-1.5 rounded border border-border bg-surface text-text-secondary hover:text-text hover:bg-bg disabled:opacity-40 disabled:hover:bg-surface disabled:hover:text-text-secondary disabled:cursor-not-allowed font-bold active:scale-95 transition-all cursor-pointer"
+              >
+                Sebelumnya
+              </button>
+              <span className="text-text font-bold px-2">
+                Halaman {currentPage} dari {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="px-3 py-1.5 rounded border border-border bg-surface text-text-secondary hover:text-text hover:bg-bg disabled:opacity-40 disabled:hover:bg-surface disabled:hover:text-text-secondary disabled:cursor-not-allowed font-bold active:scale-95 transition-all cursor-pointer"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detailed Receipt Modal dialog */}
